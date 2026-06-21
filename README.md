@@ -17,6 +17,8 @@ Unlike Roblox's default badge notifications, LuauBadge allows developers to cust
 
 ## Installation
 
+Model - https://create.roblox.com/store/asset/89760836946458/Badge
+
 1. Download the latest release.
 2. Place the LuauBadge module into your game.
 3. Place `BadgeGUI` inside the module.
