@@ -1,6 +1,6 @@
-# LuauBadge
+# Badge+
 
-LuauBadge is a customizable badge notification system for Roblox written in strict Luau.
+Badge+ is a customizable badge notification system for Roblox written in strict Luau.
 
 Unlike Roblox's default badge notifications, LuauBadge allows developers to customize the notification's appearance, sounds, text, colours, and icon while still awarding official Roblox badges.
 
@@ -20,7 +20,7 @@ Unlike Roblox's default badge notifications, LuauBadge allows developers to cust
 Model - https://create.roblox.com/store/asset/89760836946458/Badge
 
 1. Download the latest release.
-2. Place the LuauBadge module into your game.
+2. Place the Badge+ module into your game.
 3. Place `BadgeGUI` inside the module.
 4. Initialize the client:
 
@@ -33,7 +33,7 @@ Badge.client:initClient()
 5. Initialize the server:
 
 ```lua
-local Badge = require(path.To.LuauBadge)
+local Badge = require(path.To.Badge)
 
 Badge.server:init()
 ```
@@ -41,7 +41,7 @@ Badge.server:init()
 ## Creating a Badge
 
 ```lua
-local Badge = require(path.To.LuauBadge)
+local Badge = require(path.To.Badge)
 
 local WelcomeBadge = Badge.server.new({
 	badgeName = "Welcome",
