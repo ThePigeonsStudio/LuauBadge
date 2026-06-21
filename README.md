@@ -25,7 +25,7 @@ Model - https://create.roblox.com/store/asset/89760836946458/Badge
 4. Initialize the client:
 
 ```lua
-local Badge = require(path.To.LuauBadge)
+local Badge = require(path.To.Badge)
 
 Badge.client:initClient()
 ```
