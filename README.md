@@ -13,9 +13,12 @@ A customizable badge notification system for Roblox.
 ## Installation
 
 Model - https://create.roblox.com/store/asset/89760836946458/Badge
-1. Insert the module into ReplicatedStorage.
-2. Insert BadgeGUI.
+
+1. Download LuauBadge.
+2. Place BadgeGUI inside ReplicatedStorage.
 3. Require the module.
+4. Call BadgeClient:initClient().
+5. Create badges using BadgeServer.new().
 
 ## Example
 
