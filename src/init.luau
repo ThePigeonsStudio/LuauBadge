@@ -8,6 +8,9 @@ if badgeModule == nil then
 	end
 end
 
-assert(badgeModule and badgeModule:IsA("ModuleScript"), "LuauBadge: Badge module is missing")
+assert(
+	badgeModule ~= nil and badgeModule:IsA("ModuleScript"),
+	"LuauBadge: package entry point could not find src/shared/Badge.luau"
+)
 
 return require(badgeModule)

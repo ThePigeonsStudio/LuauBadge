@@ -2,22 +2,9 @@
   "name": "luaubadge",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
       "LuauBadge": {
         "$path": "src"
-      },
-      "init.luau" : {
-        "$path": "src/init.luau"
-      },
-      "Badge.luau": {
-        "$path": "src/shared/Badge.luau"
-      },
-      "BadgeClient.luau" : {
-        "$path": "src/shared/BadgeClient.luau"
-      },
-      "BadgeServer.luau" : {
-        "$path": "src/shared/BadgeServer.luau"
       }
     }
   }

@@ -1,10 +1,13 @@
+
 --!strict
 
-local server = require(script.BadgeServer)
-local client = require(script.BadgeClient)
+local RunService = game:GetService("RunService")
 
-export type Server = typeof(server)
-export type Client = typeof(client)
+local server = if RunService:IsServer() then require(script.BadgeServer) else nil
+local client = if RunService:IsClient() then require(script.BadgeClient) else nil
+
+export type Server = typeof(require(script.BadgeServer))
+export type Client = typeof(require(script.BadgeClient))
 export type BadgeProperties = {
 	badgeName: string?,
 	badgeID: number,
@@ -15,12 +18,12 @@ export type GuiProperties = {
 		text: string?,
 		textColor: Color3?,
 		textFont: Enum.Font?,
-	},
+	}?,
 	textDescription: {
 		text: string?,
 		textColor: Color3?,
 		textFont: Enum.Font?,
-	},
+	}?,
 	ImageContent: number?,
 	BackgroundColor3: Color3?,
 }

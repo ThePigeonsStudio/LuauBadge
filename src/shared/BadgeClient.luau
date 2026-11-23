@@ -6,7 +6,10 @@ BadgeClient.__index = BadgeClient
 
 export type BadgeClient = typeof(BadgeClient) & {
 	player: Player?,
+	_initialized: boolean?,
 }
+
+local initialized = false
 
 -- Initializes the badge system on the client.
 -- Disables Roblox's default badge notifications so the custom BadgeGUI
@@ -15,6 +18,9 @@ function BadgeClient:initClient()
 	if game:GetService("RunService"):IsServer() then
 		warn("LuauBadge: BadgeClient:initClient() must be called from a LocalScript")
 		return false
+	end
+	if initialized then
+		return true
 	end
 
 	local Players = game:GetService("Players")
@@ -32,6 +38,7 @@ function BadgeClient:initClient()
 
 		if success then
 			self.player = player
+			initialized = true
 			return true
 		end
 
