@@ -3,11 +3,11 @@
 
 local RunService = game:GetService("RunService")
 
-local server = if RunService:IsServer() then require(script.BadgeServer) else nil
-local client = if RunService:IsClient() then require(script.BadgeClient) else nil
+local server = if RunService:IsServer() then require(script.Parent.BadgeServer) else nil
+local client = if RunService:IsClient() then require(script.Parent.BadgeClient) else nil
 
-export type Server = typeof(require(script.BadgeServer))
-export type Client = typeof(require(script.BadgeClient))
+export type Server = typeof(require(script.Parent.BadgeServer))
+export type Client = typeof(require(script.Parent.BadgeClient))
 export type BadgeProperties = {
 	badgeName: string?,
 	badgeID: number,
