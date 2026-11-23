@@ -50,13 +50,10 @@ Create beautiful badge notifications while still awarding official Roblox badges
 
 Clone the repository or install the Roblox model.
 
-Place:
-
-Badge Module
-
-BadgeGUI
-
-into your game.
+With Wally, add `thepigeonsstudio/luaubadge` to `wally.toml`, then require the
+returned package. You may place a `ScreenGui` named `BadgeGUI` in
+`StarterGui`, `ReplicatedStorage`, or `Workspace`; it can also be passed to
+`Badge.server:init(badgeGUI)`.
 
 ---
 

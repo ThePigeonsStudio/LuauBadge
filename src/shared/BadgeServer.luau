@@ -5,54 +5,104 @@ local BadgeServer = {}
 BadgeServer.__index = BadgeServer
 
 export type BadgeServer = typeof(BadgeServer) & {
-	player : Player,
-	badgeProperties : {
-		badgeName : string,
-		badgeID : number,
-		badgeActive : boolean
+	player: Player?,
+	_badgeGUI: ScreenGui?,
+	badgeProperties: {
+		badgeName: string?,
+		badgeID: number,
+		badgeActive: boolean?,
 	},
-	guiProperties : {
-		textTitle : {
-			text : string,
-			textColor : Color3,
-			textFont : Enum.Font
+	guiProperties: {
+		textTitle: {
+			text: string?,
+			textColor: Color3?,
+			textFont: Enum.Font?,
 		},
-		textDescription  : {
-			text : string,
-			textColor : Color3,
-			textFont : Enum.Font
+		textDescription: {
+			text: string?,
+			textColor: Color3?,
+			textFont: Enum.Font?,
 		},
-		ImageContent : number,
-		BackgroundColor3 : Color3,
+		ImageContent: number?,
+		BackgroundColor3: Color3?,
 	},
-	soundProperties : {
-		isEnabled : boolean,
-		sound : Sound
+	soundProperties: {
+		isEnabled: boolean?,
+		sound: Sound?,
 	}
 }
 
 
--- Validates that the BadgeGUI exists under the Badge module.
--- Call this once at startup before awarding any badges.
-function BadgeServer:init()
-	assert(script.Parent.BadgeGUI, "Gui is missing!")
-end
-
 local BadgeService = game:GetService("BadgeService")
 local TweenService = game:GetService("TweenService")
+local activeAwards: {[Player]: boolean} = {}
+
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+	activeAwards[player] = nil
+end)
+
+local function findBadgeGuiTemplate(): ScreenGui?
+	local directLocations: { Instance } = {
+		script,
+		script.Parent,
+		game:GetService("StarterGui"),
+		game:GetService("ReplicatedStorage"),
+		game:GetService("Workspace"),
+	}
+
+	for _, location in directLocations do
+		local template = location:FindFirstChild("BadgeGUI", true)
+		if template and template:IsA("ScreenGui") then
+			return template
+		end
+	end
+
+	return nil
+end
+
+local function getFrame(ui: ScreenGui): Frame?
+	local frame = ui:FindFirstChild("frame", true)
+	return if frame and frame:IsA("Frame") then frame else nil
+end
+
+-- Validates configuration and optionally selects a BadgeGUI template.
+function BadgeServer:init(badgeGUI: ScreenGui?)
+	if badgeGUI then
+		if not badgeGUI:IsA("ScreenGui") then
+			warn("LuauBadge: BadgeGUI must be a ScreenGui")
+			return false
+		end
+		self._badgeGUI = badgeGUI
+		return true
+	end
+
+	local template = findBadgeGuiTemplate()
+	if template then
+		self._badgeGUI = template
+		return true
+	end
+
+	warn("LuauBadge: BadgeGUI is missing. Pass a ScreenGui to init or place it in StarterGui/ReplicatedStorage")
+	return false
+end
 
 -- Creates a new badge object with the given properties.
--- badgeProperties:
---   badgeID (number)     - The Roblox badge asset ID to award.
---   badgeActive (boolean) - Whether the badge is currently active. 
 function BadgeServer.new(badgeProperties: {
-	badgeID : number,
-	badgeActive : boolean
-	})
-	
+	badgeName: string?,
+	badgeID: number,
+	badgeActive: boolean?,
+})
+	assert(type(badgeProperties) == "table", "LuauBadge: badgeProperties must be a table")
+	assert(type(badgeProperties.badgeID) == "number", "LuauBadge: badgeID must be a number")
+	assert(badgeProperties.badgeID > 0, "LuauBadge: badgeID must be greater than zero")
+
 	local self = setmetatable({}, BadgeServer)
 
-	self.badgeProperties = badgeProperties
+	self.badgeProperties = {
+		badgeName = badgeProperties.badgeName or "Badge",
+		badgeID = badgeProperties.badgeID,
+		badgeActive = if badgeProperties.badgeActive == nil then true else badgeProperties.badgeActive,
+	}
 
 	return self
 end
@@ -79,42 +129,87 @@ function BadgeServer:award(
 	player : Player,
 	guiProperties : {
 		textTitle : {
-			text : string,
-			textColor : Color3,
-			textFont : Enum.Font
+			text : string?,
+			textColor : Color3?,
+			textFont : Enum.Font?
 		},
 		textDescription  : {
-			text : string,
-			textColor : Color3,
-			textFont : Enum.Font
+			text : string?,
+			textColor : Color3?,
+			textFont : Enum.Font?
 		},
-		ImageContent : number,
-		BackgroundColor3 : Color3,
-	},
+		ImageContent : number?,
+		BackgroundColor3 : Color3?,
+	}?,
 	soundProperties : {
-		isEnabled : boolean,
-		sound : Sound
-	}
+		isEnabled : boolean?,
+		sound : Sound?
+	}?
 )
-	local playerGui = player:FindFirstChildOfClass("PlayerGui")
-	local ui = playerGui and playerGui:FindFirstChild("BadgeGUI")
-	if not ui then
-		local badgeGUI = script.Parent:FindFirstChild("BadgeGUI")
-		if badgeGUI then
-			ui = badgeGUI:Clone()
-			ui.Parent = playerGui
-			ui.frame.Visible = false
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		warn("LuauBadge: award() requires a valid Player")
+		return false
+	end
+
+	if activeAwards[player] then
+		warn("LuauBadge: Badge notification is already active for", player.Name)
+		return false
+	end
+	activeAwards[player] = true
+
+	local released = false
+	local function release()
+		if not released then
+			released = true
+			activeAwards[player] = nil
 		end
 	end
-	if not ui then
-		warn("Could not find or clone BadgeGUI for player", player.Name)
-		return
+
+	if player.Parent == nil then
+		warn("LuauBadge: Cannot award a badge to a player who has left")
+		release()
+		return false
 	end
 
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then
+		warn("LuauBadge: PlayerGui is not available for", player.Name)
+		release()
+		return false
+	end
+
+	local ui = playerGui and playerGui:FindFirstChild("BadgeGUI")
+	if not ui then
+		local badgeGUI = self._badgeGUI
+		if not badgeGUI then
+			badgeGUI = findBadgeGuiTemplate()
+		end
+		if badgeGUI and badgeGUI:IsA("ScreenGui") then
+			ui = badgeGUI:Clone()
+			ui.Parent = playerGui
+			local frame = getFrame(ui)
+			if frame then
+				frame.Visible = false
+			end
+		end
+	end
+	if not ui or not ui:IsA("ScreenGui") then
+		warn("LuauBadge: Could not find or clone BadgeGUI for player", player.Name)
+		release()
+		return false
+	end
+
+	local frame = getFrame(ui)
+	if not frame then
+		warn("LuauBadge: BadgeGUI does not contain a Frame named 'frame'")
+		release()
+		return false
+	end
 
 	if self.badgeProperties.badgeActive == false then
-		warn("Cannot award badge " , self.badgeProperties.badgeName , "because it is not active!")
-		return
+		warn("LuauBadge: Cannot award badge", self.badgeProperties.badgeName, "because it is not active")
+		release()
+		return false
 	end
 
 	local hasBadge = false
@@ -123,65 +218,96 @@ function BadgeServer:award(
 	end)
 
 	if not badgeCheckSuccess then
-		warn("Failed to check badge status: " .. tostring(badgeCheckErr))
-		return
+		warn("LuauBadge: Failed to check badge status:", tostring(badgeCheckErr))
+		release()
+		return false
 	end
 
 	if hasBadge then
-		warn("Cannot award badge " , self.badgeProperties.badgeName , "because the player", player.Name, "already has it!")
-		return
+		warn("LuauBadge: Cannot award badge", self.badgeProperties.badgeName, "because", player.Name, "already has it")
+		release()
+		return false
 	end
 
 	-- Award the badge (skip in Studio)
 	if game:GetService("RunService"):IsStudio() then
-		warn("Cannot award badge in studio")
+		warn("LuauBadge: AwardBadgeAsync is skipped in Studio")
 	else
 		local success, err = pcall(function()
 			BadgeService:AwardBadgeAsync(player.UserId, self.badgeProperties.badgeID)
 		end)
 
 		if not success then
-			warn(err)
-			return
+			warn("LuauBadge: Failed to award badge:", tostring(err))
+			release()
+			return false
 		end
 
-		print("Awarded badge: " , self.badgeProperties.badgeName , " to :" , player.Name)
+		print("LuauBadge: Awarded", self.badgeProperties.badgeName, "to", player.Name)
 	end
 
 	-- Set GUI content
-	ui.frame.textframes.TextTitle.Text = guiProperties.textTitle.text
-	ui.frame.textframes.TextTitle.TextColor3 = guiProperties.textTitle.textColor
-	ui.frame.textframes.TextTitle.FontFace = Font.fromEnum(guiProperties.textTitle.textFont)
+	guiProperties = guiProperties or {
+		textTitle = {},
+		textDescription = {},
+	}
+	soundProperties = soundProperties or {}
 
-	ui.frame.textframes.TextDescription.Text = guiProperties.textDescription.text
-	ui.frame.textframes.TextDescription.TextColor3 = guiProperties.textDescription.textColor
-	ui.frame.textframes.TextDescription.FontFace = Font.fromEnum(guiProperties.textDescription.textFont)
+	local textFrames = frame:FindFirstChild("textframes", true)
+	if textFrames then
+		local title = textFrames:FindFirstChild("TextTitle")
+		if title and title:IsA("TextLabel") then
+			local titleProperties = guiProperties.textTitle
+			if titleProperties then
+				title.Text = titleProperties.text or title.Text
+				title.TextColor3 = titleProperties.textColor or title.TextColor3
+				title.FontFace = Font.fromEnum(titleProperties.textFont or Enum.Font.Gotham)
+			end
+		end
 
-	ui.frame.BackgroundColor3 = guiProperties.BackgroundColor3
-	ui.frame.ImageLabel.Image = "rbxassetid://" .. guiProperties.ImageContent
+		local description = textFrames:FindFirstChild("TextDescription")
+		if description and description:IsA("TextLabel") then
+			local descriptionProperties = guiProperties.textDescription
+			if descriptionProperties then
+				description.Text = descriptionProperties.text or description.Text
+				description.TextColor3 = descriptionProperties.textColor or description.TextColor3
+				description.FontFace = Font.fromEnum(descriptionProperties.textFont or Enum.Font.Gotham)
+			end
+		end
+	end
 
-	if soundProperties.isEnabled == true then
-		soundProperties.sound:Play()
+	frame.BackgroundColor3 = guiProperties.BackgroundColor3 or frame.BackgroundColor3
+	local image = frame:FindFirstChild("ImageLabel", true)
+	if image and image:IsA("ImageLabel") and guiProperties.ImageContent then
+		image.Image = "rbxassetid://" .. tostring(guiProperties.ImageContent)
+	end
+
+	if soundProperties.isEnabled == true and soundProperties.sound then
+		pcall(function()
+			soundProperties.sound:Play()
+		end)
 	end
 
 	local restPosition = UDim2.new(0.85, 0, 0.17, 0)
 	local offScreenPosition = UDim2.new(1.15, 0, 0.17, 0)
 	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-	ui.frame.Position = offScreenPosition
-	ui.frame.Visible = true
-	local tweenIn = TweenService:Create(ui.frame, tweenInfo, {Position = restPosition})
+	frame.Position = offScreenPosition
+	frame.Visible = true
+	local tweenIn = TweenService:Create(frame, tweenInfo, {Position = restPosition})
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
 
 	task.wait(3)
 
-	local tweenOut = TweenService:Create(ui.frame, tweenInfo, {Position = offScreenPosition})
+	local tweenOut = TweenService:Create(frame, tweenInfo, {Position = offScreenPosition})
 	tweenOut:Play()
 	tweenOut.Completed:Wait()
 
 	-- Clean up
-	ui.frame.Visible = false
+	frame.Visible = false
+	release()
+	return true
 end
 
 return BadgeServer
