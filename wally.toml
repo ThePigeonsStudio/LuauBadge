@@ -1,6 +1,6 @@
 [package]
-name = "thepigeonsstudio/luaubadge"
-version = "0.1.0"
+name = "thepigeonsstudio/BadgePlus"
+version = "1.0.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
