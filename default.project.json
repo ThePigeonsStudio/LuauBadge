@@ -1,0 +1,13 @@
+{
+  "name": "LuauBadge",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+      
+    }
+  }
+}
