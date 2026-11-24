@@ -5,6 +5,9 @@
     "ReplicatedStorage": {
       "LuauBadge": {
         "$path": "src"
+      },
+      "Packages": {
+        "$path": "Packages"
       }
     }
   }
