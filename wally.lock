@@ -8,6 +8,11 @@ version = "0.4.1"
 dependencies = []
 
 [[package]]
+name = "littensy/charm"
+version = "0.11.1"
+dependencies = []
+
+[[package]]
 name = "thepigeonsstudio/badgeplus"
 version = "1.0.0"
-dependencies = [["Vide", "centau/vide@0.4.1"]]
+dependencies = [["Charm", "littensy/charm@0.11.1"], ["Vide", "centau/vide@0.4.1"]]

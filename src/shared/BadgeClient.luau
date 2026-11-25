@@ -4,7 +4,22 @@ local BadgeClient = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Vide = require(ReplicatedStorage.Packages.Vide)
+local Charm = require(ReplicatedStorage.Packages.Charm)
 
+local guiProps = {
+		textTitle = {
+			text = "Badge Awarded!",
+			textColor = Color3,
+			textFont =  Font.new("rbxasset://fonts/families/GothamSSm.json"), Enum.FontWeight.Bold,
+		},
+		textDescription  = {
+			text = string,
+			textColor = Color3,
+			textFont = Font.new("rbxasset://fonts/families/GothamSSm.json"), Enum.FontWeight.Bold
+		},
+		ImageContent = string,
+		BackgroundColor3 = Color3,
+	}
 BadgeClient.__index = BadgeClient
 
 export type BadgeClient = typeof(BadgeClient) & {
@@ -23,7 +38,7 @@ function BadgeClient:initClient()
 
 	local create = Vide.create
 
-	local function app(parent: PlayerGui): ScreenGui
+	local function app(parent: PlayerGui, props): ScreenGui
 		return create("ScreenGui")({
 			Name = "BadgeGUI",
 			ResetOnSpawn = false,
@@ -167,7 +182,7 @@ function BadgeClient:initClient()
 		})
 	end
 
-	app(playerGui)
+	app(playerGui, {})
 
 	repeat
 		local success = pcall(function()

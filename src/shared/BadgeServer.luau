@@ -2,6 +2,8 @@
 
 local BadgeServer = {}
 
+local awardBadge : RemoteEvent
+
 BadgeServer.__index = BadgeServer
 
 export type BadgeServer = typeof(BadgeServer) & {
@@ -45,6 +47,9 @@ export type BadgeServer = typeof(BadgeServer) & {
 ]]
 function BadgeServer:init()
 	assert(script.Parent.BadgeGUI, "Gui is missing!")
+	awardBadge = Instance.new("RemoteEvent")
+	awardBadge.Parent = script.Parent
+	awardBadge.Name = "awardBadge"
 end
 
 local BadgeService = game:GetService("BadgeService")
@@ -90,7 +95,7 @@ Parameters:
     sound (Sound)
 ]]
 function BadgeServer:award(
-	player : Player,
+	player : Player?,
 	delay : number?,
 	guiProperties : {
 		textTitle : {
@@ -105,18 +110,18 @@ function BadgeServer:award(
 		},
 		ImageContent : number,
 		BackgroundColor3 : Color3,
-	},
+	}?,
 	soundProperties : {
 		isEnabled : boolean,
 		sound : Sound?
-	},
+	}?,
 	hapticsProperties : {
 		isEnabled : boolean,
 		looped : boolean?,
 		position : Vector3?,
 		radius : number?,
 		type : Enum.HapticEffectType?
-	}
+	}?
 )
 
 	local playerGui = player:FindFirstChild("PlayerGui")
