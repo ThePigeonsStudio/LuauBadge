@@ -8,21 +8,6 @@ local Charm = require(ReplicatedStorage.Packages.Charm)
 
 local TweenService = game:GetService("TweenService")
 
-local defaultGuiProps = {
-	textTitle = {
-		text = Charm.atom("Badge Awarded!"),
-		textColor = Charm.atom(Color3.new(1, 1, 1)),
-		textFont = Charm.atom(Enum.Font.GothamBold),
-	},
-	textDescription = {
-		text = Charm.atom("Badge description goes here."),
-		textColor = Charm.atom(Color3.new(0.85, 0.85, 0.85)),
-		textFont = Charm.atom(Enum.Font.Gotham),
-	},
-	ImageContent = Charm.atom(123437274034733),
-	BackgroundColor3 = Charm.atom(Color3.new(0.1921568661928177, 0.1921568661928177, 0.1921568661928177)),
-}
-
 type GuiValues = {
 	textTitle: {
 		text: string,
@@ -36,6 +21,51 @@ type GuiValues = {
 	},
 	ImageContent: number,
 	BackgroundColor3: Color3,
+}
+
+local defaultGuiValues: GuiValues = {
+	textTitle = {
+		text = "Badge Awarded!",
+		textColor = Color3.new(1, 1, 1),
+		textFont = Enum.Font.GothamBold,
+	},
+	textDescription = {
+		text = "Badge description goes here.",
+		textColor = Color3.new(0.85, 0.85, 0.85),
+		textFont = Enum.Font.Gotham,
+	},
+	ImageContent = 123437274034733,
+	BackgroundColor3 = Color3.new(0.1921568661928177, 0.1921568661928177, 0.1921568661928177),
+}
+
+local defaultGuiProps = {
+	textTitle = {
+		text = Charm.atom(defaultGuiValues.textTitle.text),
+		textColor = Charm.atom(defaultGuiValues.textTitle.textColor),
+		textFont = Charm.atom(defaultGuiValues.textTitle.textFont),
+	},
+	textDescription = {
+		text = Charm.atom(defaultGuiValues.textDescription.text),
+		textColor = Charm.atom(defaultGuiValues.textDescription.textColor),
+		textFont = Charm.atom(defaultGuiValues.textDescription.textFont),
+	},
+	ImageContent = Charm.atom(defaultGuiValues.ImageContent),
+	BackgroundColor3 = Charm.atom(defaultGuiValues.BackgroundColor3),
+}
+
+type GuiSources = {
+	textTitle: {
+		text: () -> string,
+		textColor: () -> Color3,
+		textFont: () -> Enum.Font,
+	},
+	textDescription: {
+		text: () -> string,
+		textColor: () -> Color3,
+		textFont: () -> Enum.Font,
+	},
+	ImageContent: () -> number,
+	BackgroundColor3: () -> Color3,
 }
 
 type GuiProperties = {
@@ -53,21 +83,13 @@ type GuiProperties = {
 	BackgroundColor3: Color3?,
 }
 
-local function getDefaultGuiValues(): GuiValues
-	return {
-		textTitle = {
-			text = defaultGuiProps.textTitle.text(),
-			textColor = defaultGuiProps.textTitle.textColor(),
-			textFont = defaultGuiProps.textTitle.textFont(),
-		},
-		textDescription = {
-			text = defaultGuiProps.textDescription.text(),
-			textColor = defaultGuiProps.textDescription.textColor(),
-			textFont = defaultGuiProps.textDescription.textFont(),
-		},
-		ImageContent = defaultGuiProps.ImageContent(),
-		BackgroundColor3 = defaultGuiProps.BackgroundColor3(),
-	}
+local function bindAtom<T>(atom: Charm.Atom<T>): () -> T
+	local source = Vide.source(atom())
+	Vide.cleanup(Charm.subscribe(atom, function(value)
+		source(value)
+	end))
+
+	return source
 end
 
 local function withDefault<T>(value: T?, defaultValue: T): T
@@ -93,7 +115,7 @@ function BadgeClient:initClient()
 
 	local create = Vide.create
 
-	local function app(parent: PlayerGui, props: GuiValues): ScreenGui
+	local function app(parent: PlayerGui, props: GuiSources): ScreenGui
 		return create("ScreenGui")({
 			Name = "BadgeGUI",
 			ResetOnSpawn = false,
@@ -144,7 +166,10 @@ function BadgeClient:initClient()
 					BackgroundTransparency = 1,
 					BorderSizePixel = 1,
 					BorderColor3 = Color3.new(0.10588235408067703, 0.16470588743686676, 0.2078431397676468),
-					Image = if props.ImageContent > 0 then "rbxassetid://" .. tostring(props.ImageContent) else "",
+					Image = function()
+						local imageContent = props.ImageContent()
+						return if imageContent > 0 then "rbxassetid://" .. tostring(imageContent) else ""
+					end,
 					ScaleType = Enum.ScaleType.Fit,
 					create("UICorner")({
 						Name = "UICorner",
@@ -184,7 +209,9 @@ function BadgeClient:initClient()
 						TextWrapped = true,
 						TextXAlignment = Enum.TextXAlignment.Center,
 						TextYAlignment = Enum.TextYAlignment.Center,
-						FontFace = Font.fromEnum(props.textTitle.textFont),
+						FontFace = function()
+							return Font.fromEnum(props.textTitle.textFont())
+						end,
 						create("UITextSizeConstraint")({
 							Name = "UITextSizeConstraint",
 							MaxTextSize = 50,
@@ -207,7 +234,9 @@ function BadgeClient:initClient()
 						TextWrapped = true,
 						TextXAlignment = Enum.TextXAlignment.Center,
 						TextYAlignment = Enum.TextYAlignment.Top,
-						FontFace = Font.fromEnum(props.textDescription.textFont),
+						FontFace = function()
+							return Font.fromEnum(props.textDescription.textFont())
+						end,
 						create("UITextSizeConstraint")({
 							Name = "UITextSizeConstraint",
 							MaxTextSize = 50,
@@ -230,52 +259,66 @@ function BadgeClient:initClient()
 		})
 	end
 
-	local ui = app(playerGui, getDefaultGuiValues())
+	local destroyGui, ui = Vide.root(function()
+		return app(playerGui, {
+			textTitle = {
+				text = bindAtom(defaultGuiProps.textTitle.text),
+				textColor = bindAtom(defaultGuiProps.textTitle.textColor),
+				textFont = bindAtom(defaultGuiProps.textTitle.textFont),
+			},
+			textDescription = {
+				text = bindAtom(defaultGuiProps.textDescription.text),
+				textColor = bindAtom(defaultGuiProps.textDescription.textColor),
+				textFont = bindAtom(defaultGuiProps.textDescription.textFont),
+			},
+			ImageContent = bindAtom(defaultGuiProps.ImageContent),
+			BackgroundColor3 = bindAtom(defaultGuiProps.BackgroundColor3),
+		})
+	end)
+	ui.Destroying:Once(destroyGui)
 	local frame = ui:WaitForChild("frame") :: Frame
-	local textframes = frame:WaitForChild("textframes") :: Frame
-	local titleLabel = textframes:WaitForChild("TextTitle") :: TextLabel
-	local descriptionLabel = textframes:WaitForChild("TextDescription") :: TextLabel
-	local imageLabel = frame:WaitForChild("ImageLabel") :: ImageLabel
 
-	awardBadge.OnClientEvent:Connect(function(guiProperties: GuiProperties?)
+	awardBadge.OnClientEvent:Connect(function(
+		guiProperties: GuiProperties?,
+		soundProperties: { isEnabled: boolean?, sound: Sound? }?
+	)
 		local titleProperties = if guiProperties then guiProperties.textTitle else nil
 		local descriptionProperties = if guiProperties then guiProperties.textDescription else nil
 
-		titleLabel.Text = withDefault(
-			if titleProperties then titleProperties.text else nil,
-			defaultGuiProps.textTitle.text()
-		)
-		titleLabel.TextColor3 = withDefault(
-			if titleProperties then titleProperties.textColor else nil,
-			defaultGuiProps.textTitle.textColor()
-		)
-		titleLabel.FontFace = Font.fromEnum(withDefault(
-			if titleProperties then titleProperties.textFont else nil,
-			defaultGuiProps.textTitle.textFont()
-		))
-
-		descriptionLabel.Text = withDefault(
-			if descriptionProperties then descriptionProperties.text else nil,
-			defaultGuiProps.textDescription.text()
-		)
-		descriptionLabel.TextColor3 = withDefault(
-			if descriptionProperties then descriptionProperties.textColor else nil,
-			defaultGuiProps.textDescription.textColor()
-		)
-		descriptionLabel.FontFace = Font.fromEnum(withDefault(
-			if descriptionProperties then descriptionProperties.textFont else nil,
-			defaultGuiProps.textDescription.textFont()
-		))
-
-		frame.BackgroundColor3 = withDefault(
-			if guiProperties then guiProperties.BackgroundColor3 else nil,
-			defaultGuiProps.BackgroundColor3()
-		)
-		local imageContent = withDefault(
-			if guiProperties then guiProperties.ImageContent else nil,
-			defaultGuiProps.ImageContent()
-		)
-		imageLabel.Image = "rbxassetid://" .. tostring(imageContent)
+		Charm.batch(function()
+			defaultGuiProps.textTitle.text(withDefault(
+				if titleProperties then titleProperties.text else nil,
+				defaultGuiValues.textTitle.text
+			))
+			defaultGuiProps.textTitle.textColor(withDefault(
+				if titleProperties then titleProperties.textColor else nil,
+				defaultGuiValues.textTitle.textColor
+			))
+			defaultGuiProps.textTitle.textFont(withDefault(
+				if titleProperties then titleProperties.textFont else nil,
+				defaultGuiValues.textTitle.textFont
+			))
+			defaultGuiProps.textDescription.text(withDefault(
+				if descriptionProperties then descriptionProperties.text else nil,
+				defaultGuiValues.textDescription.text
+			))
+			defaultGuiProps.textDescription.textColor(withDefault(
+				if descriptionProperties then descriptionProperties.textColor else nil,
+				defaultGuiValues.textDescription.textColor
+			))
+			defaultGuiProps.textDescription.textFont(withDefault(
+				if descriptionProperties then descriptionProperties.textFont else nil,
+				defaultGuiValues.textDescription.textFont
+			))
+			defaultGuiProps.ImageContent(withDefault(
+				if guiProperties then guiProperties.ImageContent else nil,
+				defaultGuiValues.ImageContent
+			))
+			defaultGuiProps.BackgroundColor3(withDefault(
+				if guiProperties then guiProperties.BackgroundColor3 else nil,
+				defaultGuiValues.BackgroundColor3
+			))
+		end)
 
 		local restPosition = UDim2.new(0.85, 0, 0.17, 0)
 		local offScreenPosition = UDim2.new(1.15, 0, 0.17, 0)
@@ -295,6 +338,11 @@ function BadgeClient:initClient()
 		tweenOut.Completed:Wait()
 
 		frame.Visible = false
+
+		if soundProperties and soundProperties.isEnabled and soundProperties.sound then
+			soundProperties.sound:Play()
+		end
+
 	end)
 
 	repeat

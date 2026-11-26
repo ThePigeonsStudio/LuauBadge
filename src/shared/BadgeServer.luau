@@ -3,7 +3,7 @@
 local BadgeServer = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Scythe = require(ReplicatedStorage.Packages.Sycthe)
+local Scythe = require(ReplicatedStorage.Packages.Sythe)
 local scope = Scythe.scope()
 
 local awardBadge: RemoteEvent
