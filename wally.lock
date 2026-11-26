@@ -3,6 +3,16 @@
 registry = "test"
 
 [[package]]
+name = "alicesaidhi/conch"
+version = "0.4.0"
+dependencies = [["language", "alicesaidhi/conch-language@0.4.0"]]
+
+[[package]]
+name = "alicesaidhi/conch-language"
+version = "0.4.0"
+dependencies = []
+
+[[package]]
 name = "centau/vide"
 version = "0.4.1"
 dependencies = []
@@ -13,6 +23,11 @@ version = "0.11.1"
 dependencies = []
 
 [[package]]
+name = "synttx/scythe"
+version = "1.2.2"
+dependencies = []
+
+[[package]]
 name = "thepigeonsstudio/badgeplus"
 version = "1.0.0"
-dependencies = [["Charm", "littensy/charm@0.11.1"], ["Vide", "centau/vide@0.4.1"]]
+dependencies = [["Charm", "littensy/charm@0.11.1"], ["Conch", "alicesaidhi/conch@0.4.0"], ["Scythe", "synttx/scythe@1.2.2"], ["Vide", "centau/vide@0.4.1"]]

@@ -9,3 +9,4 @@ realm = "shared"
 Vide = "centau/vide@0.4.1"
 Charm = "littensy/charm@0.11.1"#
 Conch = "alicesaidhi/conch@0.4.0"
+Scythe = "synttx/scythe@1.2.2"
